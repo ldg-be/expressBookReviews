@@ -5,7 +5,8 @@ const regd_users = express.Router();
 
 let users = [];
 let reviews = {
-    "isbn" : [{"username":"", "review":"blablabla"},{}]
+    "123": [{"username":"lars", "review":"blablabla"}],
+    "456": []
 };
 
 const isValid = (username)=>{
@@ -51,16 +52,48 @@ regd_users.post("/login", (req,res) => {
     return res.status(208).json({message: "Invalid Login. Check username and password"});
 }});
 
+function deleteReview(isbn, username) {
+    const index = reviews[isbn].indexOf(username)
+    reviews[isbn].splice(index,1)
+    console.log("Successfully deleted Review")
+}
+
 // Add a book review
 regd_users.put("/auth/review/:isbn", (req, res) => {
-  //Write your code here
-  return res.status(300).json({message: "Yet to be implemented"});
+    let isbn = req.params.isbn;
+    let username = req.session.authorization.username
+    const newreview = {
+        "username":username,
+        "review":req.body.review
+    }
+    let bookreview = reviews[isbn]
+    console.log(bookreview)
+    if(!bookreview){
+        console.log("No existing ISBN!")
+        //create new object
+        reviews[isbn] = newreview;
+        console.log("ISBN creater, review added")
+    }
+    let lastreview = bookreview.filter((review)=>{
+        return (review.username == username)
+    });
+    if (lastreview.length > 0){
+        //delete review
+        deleteReview(isbn,username)
+        console.log("Review changed");
+    } else {
+        console.log("Review added")
+    }
+    //add new review
+    bookreview.push(newreview);
+
+    return res.json({message: "Review submitted successfully",content:bookreview});
 });
 
 //Delete a book review
 regd_users.delete("/auth/review/:isbn", (req, res) => {
-  //Write your code here
-  return res.status(300).json({message: "Yet to be implemented"});
+  deleteReview(req.params.isbn,req.session.authorization.username)
+  return res.status(300).json({message: "Successfully deleted the review",isbn:req.params.isbn});
 });
 
 module.exports.authenticated = regd_users;
